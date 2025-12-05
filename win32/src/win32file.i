@@ -1103,7 +1103,7 @@ PyObject *PyWinObject_FromQueuedOVERLAPPED(OVERLAPPED *p)
 	// Also check it is a valid write pointer (we don't write to it, but all
 	// PyObjects are writable, so that extra check is worthwhile)
 	// This is NOT foolproof - screw up reference counting and things may die!
-	if (po->ob_refcnt<=0 || po->ob_type==0 || IsBadWritePtr(po, sizeof(PyOVERLAPPED))) {
+	if (Py_REFCNT(po)<=0 || Py_TYPE(po)==0 || IsBadWritePtr(po, sizeof(PyOVERLAPPED))) {
 		PyErr_SetString(PyExc_RuntimeError, "This overlapped object has lost all its references so was destroyed");
 		return NULL;
 	}
@@ -1484,8 +1484,10 @@ PyObject *PyFILE_NOTIFY_INFORMATION(PyObject *self, PyObject *args)
 // ReadFileEx
 // SearchPath
 
+%rename("%(rstrip:[W])s") "";
+
 // @pyswig |SetCurrentDirectory|Sets the current directory.
-%name(SetCurrentDirectory) BOOLAPI SetCurrentDirectoryW(
+BOOLAPI SetCurrentDirectoryW(
     WCHAR *lpPathName	// @pyparm str/string|lpPathName||Name of the path to set current.
 );
 
@@ -1564,16 +1566,17 @@ BOOLAPI UnlockFile(
 
 %native(UnlockFileEx) MyUnlockFileEx;
 
+
 // File Handle / File Descriptor APIs.
 // @pyswig long|_get_osfhandle|Gets operating-system file handle associated with existing stream
 // @pyparm int|fd||File descriptor as returned by file.fileno()
-%name(_get_osfhandle)
+%rename(_get_osfhandle) myget_osfhandle;
 PyObject *myget_osfhandle( int filehandle );
 
 // @pyswig int|_open_osfhandle|Associates a C run-time file handle with a existing operating-system file handle.
 // @pyparm <o PyHANDLE>|osfhandle||An open file handle
 // @pyparm int|flags||O_APPEND,O_RDONLY, or O_TEXT
-%name(_open_osfhandle)
+%rename(_open_osfhandle) myopen_osfhandle;
 PyObject *myopen_osfhandle ( PyHANDLE osfhandle, int flags );
 
 
@@ -2165,7 +2168,8 @@ PyObject* MyWSAEventSelect
 %}
 
 // @pyswig |WSAEventSelect|Specifies an event object to be associated with the supplied set of FD_XXXX network events.
-%name(WSAEventSelect) PyObject *MyWSAEventSelect
+%rename(WSAEventSelect) MyWSAEventSelect;
+PyObject *MyWSAEventSelect
 (
 	SOCKET *s, // @pyparm <o PySocket>|socket||socket to attach to the event
 	PyHANDLE hEvent, // @pyparm <o PyHandle>|hEvent||Event handle for the socket to become attached to.
@@ -2287,7 +2291,8 @@ PyObject* MyWSAAsyncSelect
 %}
 
 // @pyswig |WSAAsyncSelect|Request windows message notification for the supplied set of FD_XXXX network events.
-%name(WSAAsyncSelect) PyObject *MyWSAAsyncSelect
+%rename(WSAAsyncSelect) MyWSAAsyncSelect;
+PyObject *MyWSAAsyncSelect
 (
 	SOCKET *s, // @pyparm <o PySocket>|socket||socket to attach to the event
 	HWND hwnd, // @pyparm <o hwnd>|hwnd||Window handle for the socket to become attached to.
@@ -2534,12 +2539,12 @@ Error:
 
 %native (DCB) PyWinMethod_NewDCB;
 
-%typemap(python,in) DCB *
+%typemap(in) DCB *
 {
 	if (!PyWinObject_AsDCB($source, &$target, TRUE))
 		return NULL;
 }
-%typemap(python,argout) DCB *OUTPUT {
+%typemap(argout) DCB *OUTPUT {
     PyObject *o;
     o = PyWinObject_FromDCB($source);
     if (!$target) {
@@ -2558,18 +2563,18 @@ Error:
       Py_XDECREF(o);
     }
 }
-%typemap(python,ignore) DCB *OUTPUT(DCB temp)
+%typemap(ignore) DCB *OUTPUT(DCB temp)
 {
   $target = &temp;
   $target->DCBlength = sizeof( DCB ) ;
 }
 
-%typemap(python,in) COMSTAT *
+%typemap(in) COMSTAT *
 {
 	if (!PyWinObject_AsCOMSTAT($source, &$target, TRUE))
 		return NULL;
 }
-%typemap(python,argout) COMSTAT *OUTPUT {
+%typemap(argout) COMSTAT *OUTPUT {
     PyObject *o;
     o = PyWinObject_FromCOMSTAT(*$source);
     if (!$target) {
@@ -2588,20 +2593,20 @@ Error:
       Py_XDECREF(o);
     }
 }
-%typemap(python,ignore) COMSTAT *OUTPUT(COMSTAT temp)
+%typemap(ignore) COMSTAT *OUTPUT(COMSTAT temp)
 {
   $target = &temp;
 }
 
 
-%typemap(python,in) COMMTIMEOUTS *(COMMTIMEOUTS temp)
+%typemap(in) COMMTIMEOUTS *(COMMTIMEOUTS temp)
 {
 	$target = &temp;
 	if (!PyWinObject_AsCOMMTIMEOUTS($source, $target))
 		return NULL;
 }
 
-%typemap(python,argout) COMMTIMEOUTS *OUTPUT {
+%typemap(argout) COMMTIMEOUTS *OUTPUT {
     PyObject *o;
     o = PyWinObject_FromCOMMTIMEOUTS($source);
     if (!$target) {
@@ -2620,7 +2625,7 @@ Error:
       Py_XDECREF(o);
     }
 }
-%typemap(python,ignore) COMMTIMEOUTS *OUTPUT(COMMTIMEOUTS temp)
+%typemap(ignore) COMMTIMEOUTS *OUTPUT(COMMTIMEOUTS temp)
 {
   $target = &temp;
 }

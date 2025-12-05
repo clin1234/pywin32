@@ -6,9 +6,12 @@
 %include "typemaps.i"
 %include "pywin32.i"
 
-%typedef void *NULL_ONLY
 
-%typemap(python,in) NULL_ONLY {
+%{
+typedef void *NULL_ONLY;
+%}
+
+%typemap(in) NULL_ONLY {
 	if ($source != Py_None) {
 		PyErr_SetString(PyExc_TypeError, "This param must be None");
 		return NULL;
@@ -18,7 +21,7 @@
 
 // only seem able to make this work with an incorrect level of
 // indirection, and fixing it up inline with a temp.
-%typemap(python,in) PTIMERAPCROUTINE *(PTIMERAPCROUTINE temp) {
+%typemap(in) PTIMERAPCROUTINE *(PTIMERAPCROUTINE temp) {
 	if ($source != Py_None) {
 		PyErr_SetString(PyExc_TypeError, "This param must be None");
 		return NULL;
@@ -29,7 +32,7 @@
 
 // We can get better perf from some of these functions that don't block
 // by not releasing the Python lock as part of the call.
-%typemap(python,except) BOOLAPI {
+%typemap(in,numinputs=0) BOOLAPI {
       $function
       if (!$source)  {
            $cleanup
@@ -176,7 +179,7 @@ static BOOL MakeHandleList(PyObject *handleList, HANDLE **ppBuf, DWORD *pNumEntr
 %}
 
 // @pyswig int|MsgWaitForMultipleObjects|Returns when a message arrives of an event is signalled
-%name(MsgWaitForMultipleObjects) PyObject *MyMsgWaitForMultipleObjects(
+%rename(MsgWaitForMultipleObjects) PyObject *MyMsgWaitForMultipleObjects(
     PyObject *obHandleList, // @pyparm [<o PyHANDLE>, ...]|handleList||A sequence of handles to wait on.
     BOOL bWaitAll, // @pyparm bool|bWaitAll||If true, waits for all handles in the list.
     DWORD dwMilliseconds,	// @pyparm int|milliseconds||time-out interval in milliseconds
@@ -211,7 +214,7 @@ static PyObject * MyMsgWaitForMultipleObjects(
 %}
 
 // @pyswig int|MsgWaitForMultipleObjectsEx|Returns when a message arrives of an event is signalled
-%name(MsgWaitForMultipleObjectsEx) PyObject *MyMsgWaitForMultipleObjectsEx(
+%rename(MsgWaitForMultipleObjectsEx) PyObject *MyMsgWaitForMultipleObjectsEx(
     PyObject *obHandleList, // @pyparm [<o PyHANDLE>, ...]|handleList||A sequence of handles to wait on.
     DWORD dwMilliseconds,	// @pyparm int|milliseconds||time-out interval in milliseconds
     DWORD dwWakeMask, 	// @pyparm int|wakeMask||type of input events to wait for
@@ -346,7 +349,7 @@ static PyObject *MyWaitForMultipleObjects(
 
 %}
 // @pyswig int|WaitForMultipleObjects|Returns when an event is signalled
-%name(WaitForMultipleObjects) PyObject *MyWaitForMultipleObjects(
+%rename(WaitForMultipleObjects) PyObject *MyWaitForMultipleObjects(
     PyObject *handleList,  // @pyparm [<o PyHANDLE>, ...]|handleList||A sequence of handles to wait on.
     BOOL bWaitAll,	// @pyparm bool|bWaitAll||wait flag
     DWORD dwMilliseconds 	// @pyparm int|milliseconds||time-out interval in milliseconds
@@ -378,14 +381,16 @@ static PyObject *MyWaitForMultipleObjectsEx(
 }
 %}
 // @pyswig int|WaitForMultipleObjectsEx|Returns when an event is signalled
-%name(WaitForMultipleObjectsEx) PyObject *MyWaitForMultipleObjectsEx(
+%rename(WaitForMultipleObjectsEx) PyObject *MyWaitForMultipleObjectsEx(
     PyObject *handleList, // @pyparm [<o PyHANDLE>, ...]|handleList||A sequence of handles to wait on.
     BOOL bWaitAll,	// @pyparm bool|bWaitAll||wait flag
     DWORD dwMilliseconds,	// @pyparm int|milliseconds||time-out interval in milliseconds
     BOOL bAlertable 	// @pyparm bool|bAlertable||alertable wait flag.
    );
-%typedef DWORD DWORD_WAITAPI
-%typemap(python,except) DWORD_WAITAPI {
+%{
+    typedef DWORD DWORD_WAITAPI;
+%}
+%typemap(in,numinputs=0) DWORD_WAITAPI {
       Py_BEGIN_ALLOW_THREADS
       $function
       Py_END_ALLOW_THREADS

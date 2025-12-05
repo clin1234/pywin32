@@ -81,7 +81,7 @@ PyObject *PyWinObject_FromEVT_HANDLE(HANDLE h, PyObject *context=NULL)
 }
 %}
 
-%typemap(python,except) PyEVTLOG_HANDLE {
+%typemap(in,numinputs=0) PyEVTLOG_HANDLE {
   Py_BEGIN_ALLOW_THREADS
   $function
   Py_END_ALLOW_THREADS
@@ -91,7 +91,7 @@ PyObject *PyWinObject_FromEVT_HANDLE(HANDLE h, PyObject *context=NULL)
   }
 }
 
-%typemap(python,out) PyEVTLOG_HANDLE {
+%typemap(out) PyEVTLOG_HANDLE {
   $target = PyWinObject_FromEVTLOG_HANDLE($source);
 }
 
@@ -1499,7 +1499,7 @@ BOOL PyWinObject_AsEVT_RPC_LOGIN(PyObject *ob, EVT_RPC_LOGIN *erl)
 {
 	ZeroMemory(erl, sizeof(*erl));
 	if (!PyTuple_Check(ob)){
-		PyErr_Format(PyExc_TypeError, "PyEVT_RPC_LOGIN must be a tuple instead of %s", ob->ob_type->tp_name);
+		PyErr_Format(PyExc_TypeError, "PyEVT_RPC_LOGIN must be a tuple instead of %s", Py_TYPE(ob)->tp_name);
 		return FALSE;
 		}
 	PyObject *observer, *obuser=Py_None, *obdomain=Py_None, *obpassword=Py_None;
