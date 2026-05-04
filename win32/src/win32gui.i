@@ -8,11 +8,11 @@
 
 %{
 #undef PyHANDLE
-#include "pywinobjects.h"
+#include "PyWinObjects.h"
 #include "winuser.h"
-#include "CommCtrl.h"
+#include "commctrl.h"
 #include "windowsx.h" // For edit control hacks.
-#include "Dbt.h" // device notification
+#include "dbt.h" // device notification
 #include "malloc.h"
 
 static PyObject *g_AtomMap = NULL; // Mapping class atoms to Python WNDPROC
@@ -6015,7 +6015,7 @@ PyListView_SortItems(PyObject *self, PyObject *args)
 		return NULL;
 	if (!PyCallable_Check(ob))
 		return PyErr_Format(PyExc_TypeError,
-		                    "2nd param must be callable (got type %s)", Py_TYPE(ob)->tp_name);
+		                    "2nd param must be callable (got type %s)", ob->ob_type->tp_name);
 	PySortCallback cb = {ob, obParam};
 	BOOL ok;
 	GUI_BGN_SAVE;
@@ -6049,7 +6049,7 @@ PyListView_SortItemsEx(PyObject *self, PyObject *args)
 		return NULL;
 	if (!PyCallable_Check(ob))
 		return PyErr_Format(PyExc_TypeError,
-		                    "2nd param must be callable (got type %s)", Py_TYPE(ob)->tp_name);
+		                    "2nd param must be callable (got type %s)", ob->ob_type->tp_name);
 	PySortCallback cb = {ob, obParam};
 	BOOL ok;
 	GUI_BGN_SAVE;
@@ -7405,13 +7405,13 @@ PyObject *PyRegisterDeviceNotification(PyObject *self, PyObject *args)
 				"structure says it has %d bytes, but %d was provided",
 				(int)struct_bytes, (int)pybuf.len());
 	// @pyseeapi RegisterDeviceNotification
-	HDEVNOTIFY not;
+	HDEVNOTIFY notify;
 	Py_BEGIN_ALLOW_THREADS
-	not = RegisterDeviceNotification(handle, pybuf.ptr(), flags);
+	notify = RegisterDeviceNotification(handle, pybuf.ptr(), flags);
 	Py_END_ALLOW_THREADS
-	if (not == NULL)
+	if (notify == NULL)
 		return PyWin_SetAPIError("RegisterDeviceNotification");
-	return PyWinObject_FromHDEVNOTIFY(not);
+	return PyWinObject_FromHDEVNOTIFY(notify);
 }
 %}
 %native(RegisterDeviceNotification) PyRegisterDeviceNotification;

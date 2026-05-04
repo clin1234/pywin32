@@ -4,7 +4,7 @@
 
 // If building under a GCC, tweak what we need.
 #if defined(__GNUC__) && defined(_POSIX_C_SOURCE)
-// python.h complains if _POSIX_C_SOURCE is already defined
+// Python.h complains if _POSIX_C_SOURCE is already defined
 #undef _POSIX_C_SOURCE
 #endif
 
@@ -14,7 +14,7 @@
 #undef small
 #endif
 
-#include "Python.h"
+#include <Python.h>
 #include "structmember.h"
 #include "windows.h"
 
@@ -38,6 +38,19 @@
 #define PYWIN_MODULE_INIT_RETURN_SUCCESS return module
 
 // To setup the module object itself and the module's dictionary.
+#ifdef Py_GIL_DISABLED
+#define PYWIN_MODULE_INIT_PREPARE(module_name, functions, docstring)                                        \
+    PyObject *dict, *module;                                                                                \
+    static PyModuleDef module_name##_def = {PyModuleDef_HEAD_INIT, #module_name, docstring, -1, functions}; \
+    if (PyWinGlobals_Ensure() == -1)                                                                        \
+        return NULL;                                                                                        \
+    if (!(module = PyModule_Create(&module_name##_def)))                                                    \
+        return NULL;                                                                                        \
+    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);                                                  \
+    if (!(dict = PyModule_GetDict(module)))                                                                 \
+        return NULL;
+
+#else
 #define PYWIN_MODULE_INIT_PREPARE(module_name, functions, docstring)                                        \
     PyObject *dict, *module;                                                                                \
     static PyModuleDef module_name##_def = {PyModuleDef_HEAD_INIT, #module_name, docstring, -1, functions}; \
@@ -47,6 +60,7 @@
         return NULL;                                                                                        \
     if (!(dict = PyModule_GetDict(module)))                                                                 \
         return NULL;
+#endif
 
 // Helpers for our types.
 // Macro to handle PyObject layout changes in Py3k
@@ -703,17 +717,13 @@ class CEnterLeavePython {
 };
 
 // A helper for simple exception handling.
-// try/__try
-#if defined(__MINGW32__) || defined(MAINWIN)
+#if defined(__MINGW32__)
+#define __try try
+#define __except(filter) catch (...)
 #define PYWINTYPES_TRY try
-#else
-#define PYWINTYPES_TRY __try
-#endif /* MAINWIN */
-
-// catch/__except
-#if defined(__MINGW32__) || defined(MAINWIN)
 #define PYWINTYPES_EXCEPT catch (...)
 #else
+#define PYWINTYPES_TRY __try
 #define PYWINTYPES_EXCEPT __except (EXCEPTION_EXECUTE_HANDLER)
 #endif
 // End of exception helper macros.
