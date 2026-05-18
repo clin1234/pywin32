@@ -5,7 +5,6 @@
 #include "PyCOMImpl.h"
 #include "SimpleCounter.h"
 #include "objbase.h"
-#include <Python.h>
 
 #include "stdio.h"
 #include "string.h"
@@ -965,9 +964,7 @@ HRESULT CPyCOMTest::TestQueryInterface()
     COSERVERINFO server = {(DWORD)0, 0, (COAUTHINFO *)NULL, (DWORD)0};
 
     // Create an instance of the test server
-    Py_CAN_START_THREADS;
     hr = CoCreateInstanceEx(CLSID_PythonTestPyCOMTest, NULL, CLSCTX_LOCAL_SERVER, &server, 1, mqi);
-    Py_CAN_END_THREADS;
     if (FAILED(hr)) {
         goto exit;
     }
