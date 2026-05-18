@@ -999,7 +999,7 @@ def TestVTable(clsctx=pythoncom.CLSCTX_ALL):
     try:
         tester.TestMyInterface(None)
     except pythoncom.com_error as details:
-        pass
+        raise
     # and a real object.
     tester.TestMyInterface(testee)
 
