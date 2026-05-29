@@ -961,10 +961,15 @@ HRESULT CPyCOMTest::TestQueryInterface()
 
     MULTI_QI mqi[1] = {&IID_IUnknown, NULL, E_FAIL};
 
-    COSERVERINFO server = {(DWORD)0, 0, (COAUTHINFO *)NULL, (DWORD)0};
+    COSERVERINFO server = {(DWORD)0, NULL, (COAUTHINFO *)NULL, (DWORD)0};
 
     // Create an instance of the test server
-    hr = CoCreateInstanceEx(CLSID_PythonTestPyCOMTest, NULL, CLSCTX_LOCAL_SERVER, &server, 1, mqi);
+    hr = CoCreateInstanceEx(CLSID_PythonTestPyCOMTest, NULL, CLSCTX_LOCAL_SERVER, (COSERVERINFO*)NULL, 1, mqi);
+    if (FAILED(hr)) {
+        goto exit;
+    }
+    // Must also check the per-interface result:
+    hr = mqi[0].hr;
     if (FAILED(hr)) {
         goto exit;
     }
